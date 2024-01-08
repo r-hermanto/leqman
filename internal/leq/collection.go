@@ -51,6 +51,26 @@ func getLeqConfigDir() string {
 	return leqmanDir
 }
 
+func GetRequest(name string) LeqConfig {
+	path := getLeqConfigDir() + name + ".json"
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+		log.Fatal("Request not exists.", err)
+	}
+
+	fileByte, err := os.ReadFile(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var legConfig LeqConfig
+	err = json.Unmarshal(fileByte, &legConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return legConfig
+}
+
 func DeleteRequest(name string) {
 	path := getLeqConfigDir() + name + ".json"
 	if err := os.Remove(path); err != nil {
