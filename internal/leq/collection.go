@@ -11,37 +11,56 @@ import (
 )
 
 type Collection struct {
-	Name     string
-	FilePath string
+	Title    string
+	Path     string
+	IsDir    bool
+	Children []*Collection
 }
 
-func GetCollections() []Collection {
-	collections := []Collection{}
-
+func GetCollections() []*Collection {
 	path := getLeqConfigDir()
-	de, err := os.ReadDir(path)
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	for _, itm := range de {
-		if itm.IsDir() {
-			continue
+	var generateCollections func(string) []*Collection
+	generateCollections = func(path string) []*Collection {
+		collections := []*Collection{}
+
+		dirEntry, err := os.ReadDir(path)
+		if err != nil {
+			log.Fatal(err)
 		}
 
-		ext := filepath.Ext(itm.Name())
-		if ext != ".json" {
-			continue
+		for _, itm := range dirEntry {
+			fullPath := filepath.Join(path, itm.Name())
+			collection := &Collection{
+				Title: getTitle(itm.Name()),
+				Path:  fullPath,
+				IsDir: itm.IsDir(),
+			}
+
+			if itm.IsDir() {
+				collection.Children = generateCollections(fullPath)
+			}
+
+			collections = append(collections, collection)
 		}
 
-		leqName := strings.TrimSuffix(filepath.Base(itm.Name()), ext)
-		collections = append(collections, Collection{
-			Name:     leqName,
-			FilePath: path + itm.Name(),
-		})
+		return collections
 	}
 
-	return collections
+	return generateCollections(path)
+}
+
+func getTitle(name string) string {
+	ext := filepath.Ext(name)
+	if ext == "" {
+		return name
+	}
+
+	if ext != ".json" {
+		return ""
+	}
+
+	return strings.TrimSuffix(filepath.Base(name), ext)
 }
 
 func getLeqConfigDir() string {
