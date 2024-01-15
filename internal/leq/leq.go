@@ -18,7 +18,13 @@ type LeqConfig struct {
 	Body   json.RawMessage   `json:"body"`
 }
 
-func (l *LeqConfig) Execute() {
+type LeqResponse struct {
+	Header     map[string]string
+	Body       string
+	StatusCode string
+}
+
+func (l *LeqConfig) Execute() string {
 	url := l.URL
 	if url[:4] != "http" {
 		url = "http://" + url
@@ -53,6 +59,8 @@ func (l *LeqConfig) Execute() {
 	json.Indent(&pretty, b, "", "    ")
 	fmt.Printf("res.Header: %v\n", resp.Header)
 	fmt.Println(pretty.String())
+
+    return pretty.String()
 }
 
 func allowBody(httpMethod string) bool {

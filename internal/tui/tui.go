@@ -1,6 +1,9 @@
 package tui
 
 import (
+	"bytes"
+	"encoding/json"
+
 	"github.com/r-hermanto/leqman/internal/leq"
 	"github.com/rivo/tview"
 )
@@ -8,6 +11,8 @@ import (
 type Application struct {
 	App         *tview.Application
 	Collections *tview.TreeView
+	Request     *tview.TextView
+	Response    *tview.TextView
 }
 
 func (a *Application) Run() {
@@ -20,6 +25,8 @@ func NewApplication() *Application {
 	apps := &Application{
 		App:         tview.NewApplication(),
 		Collections: tview.NewTreeView(),
+		Request:     tview.NewTextView(),
+		Response:    tview.NewTextView(),
 	}
 
 	collections := leq.GetCollections()
@@ -32,12 +39,54 @@ func NewApplication() *Application {
 
 	apps.Collections.
 		SetBorder(true).
-		SetTitle("Collection Section")
+		SetTitle("Collections Section")
+
+	apps.Collections.SetSelectedFunc(func(node *tview.TreeNode) {
+		c := node.GetReference().(*leq.Collection)
+
+		if c.IsDir {
+			return
+		}
+
+		lc := leq.GetRequest(c.Path)
+		b, err := json.Marshal(lc)
+		if err != nil {
+			panic(err)
+		}
+		var req bytes.Buffer
+		json.Indent(&req, b, "", "    ")
+
+		apps.Request.SetText(req.String())
+	})
+
+	apps.Request.
+		SetBorder(true).
+		SetTitle("Request Section")
+
+	lc := leq.GetRequest(collections[0].Path)
+	b, err := json.Marshal(lc)
+	if err != nil {
+		panic(err)
+	}
+	var req bytes.Buffer
+	json.Indent(&req, b, "", "    ")
+
+	apps.Request.SetText(req.String())
+
+	resp := lc.Execute()
+	apps.Response.SetText(resp)
 
 	flex := tview.NewFlex().
 		AddItem(apps.Collections, 0, 1, true).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Request Section"), 0, 3, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Response Section"), 0, 3, false)
+		AddItem(apps.Request, 0, 3, false).
+		AddItem(apps.Response, 0, 3, false)
+
+		// TODO:
+		// 4. update design to handle
+		//      a. url
+		//      b. header
+		//      c. body
+		//      d. options
 
 	apps.App.SetRoot(flex, true).EnableMouse(true)
 
@@ -49,7 +98,9 @@ func buildTreeNode(c []*leq.Collection) *tview.TreeNode {
 
 	var addChild func(c *leq.Collection) *tview.TreeNode
 	addChild = func(c *leq.Collection) *tview.TreeNode {
-		node := tview.NewTreeNode(c.Title)
+		node := tview.
+			NewTreeNode(c.Title).
+			SetReference(c)
 
 		if !c.IsDir {
 			return node

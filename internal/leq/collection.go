@@ -70,13 +70,12 @@ func getLeqConfigDir() string {
 	return leqmanDir
 }
 
-func GetRequest(name string) LeqConfig {
-	path := getLeqConfigDir() + name + ".json"
-	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
+func GetRequest(filePath string) LeqConfig {
+	if _, err := os.Stat(filePath); errors.Is(err, fs.ErrNotExist) {
 		log.Fatal("Request not exists.", err)
 	}
 
-	fileByte, err := os.ReadFile(path)
+	fileByte, err := os.ReadFile(filePath)
 	if err != nil {
 		log.Fatal(err)
 	}
