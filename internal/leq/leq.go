@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 )
 
 type LeqConfig struct {
+	Path   string
 	URL    string            `json:"url"`
 	Method string            `json:"method"`
 	Header map[string]string `json:"header"`
@@ -57,10 +57,8 @@ func (l *LeqConfig) Execute() string {
 
 	var pretty bytes.Buffer
 	json.Indent(&pretty, b, "", "    ")
-	fmt.Printf("res.Header: %v\n", resp.Header)
-	fmt.Println(pretty.String())
 
-    return pretty.String()
+	return pretty.String()
 }
 
 func allowBody(httpMethod string) bool {

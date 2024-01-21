@@ -80,13 +80,14 @@ func GetRequest(filePath string) LeqConfig {
 		log.Fatal(err)
 	}
 
-	var legConfig LeqConfig
-	err = json.Unmarshal(fileByte, &legConfig)
+	var leqConfig LeqConfig
+	err = json.Unmarshal(fileByte, &leqConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	return legConfig
+	leqConfig.Path = filePath
+	return leqConfig
 }
 
 func DeleteRequest(name string) {
@@ -105,8 +106,8 @@ func CreateNewRequest(name string, l LeqConfig) {
 	writeRequestToFile(path, l)
 }
 
-func UpdateRequest(name string, l LeqConfig) {
-	path := getLeqConfigDir() + name + ".json"
+func UpdateRequest(l LeqConfig) {
+	path := l.Path
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		log.Fatal("Request not exists.", err)
 	}
@@ -128,11 +129,11 @@ func writeRequestToFile(path string, l LeqConfig) {
 
 	b, err := json.Marshal(l)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	_, err = f.Write(b)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 }
